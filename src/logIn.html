@@ -1,0 +1,131 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login pagina</title>
+    <link rel="stylesheet" href="CSS/logInCSS.css">
+
+    <script src="JS/utils/sessionManager.js"></script>
+    <script src="JS/utils/databaseManager.js"></script>
+    <script src="JS/database.js"></script>
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#header').load('header.html');
+        });
+        $(document).ready(function() { $('#footer').load('footer.html'); });
+
+
+        function login() {
+            var input1 = $("#input1").val();
+            var input2 = $("#input2").val();
+            var errorMessage2 = document.getElementById("error-message2");
+
+            databaseManager
+                .query("SELECT gebruikers.GebruikerID, gebruikers.Email, gebruikers.Wachtwoord, gebruikers.Achternaam, gebruikers.Geslacht, profielen.Bio FROM gebruikers INNER JOIN profielen on profielen.GebruikerID = gebruikers.GebruikerID WHERE Email = ? AND Wachtwoord = ?", [input1, input2])
+                .done(function (data) {
+                    if (data.length == 1){
+                        sessionStorage.setItem("GebruikerID", data[0].GebruikerID);
+                        sessionStorage.setItem("Achternaam", data[0].Achternaam);
+                        sessionStorage.setItem("Geslacht", data[0].Geslacht);
+                        /*var gebruikerID = sessionStorage.getItem("GebruikerID");
+                        databaseManager
+                            .query("INSERT INTO notificatie (AfzenderID, Titel, Content) VALUES (?,?,?)",
+                                    [gebruikerID, "Inloggen", "U heeft ingelogd"])
+                            .done(function(ingelogd){
+                                console.log(ingelogd);
+                            })
+                            .fail(function(fail){
+                                console.log(fail);
+                            });*/
+                        console.log("SUCCEEDED",data);
+                        if(data[0].Bio === null){
+                            window.location.href = "profiel.html";
+                        }else{
+                            window.location.href = "index.html";
+
+                        }
+
+                    } else{
+                        console.log("FOUTE INLOG");
+                        $("#input1").val = "E-mail";
+                        $("#input2").val = "Wachtwoord";
+                        document.getElementById("input1").style.border = "2px solid #D81E05";
+                        document.getElementById("input2").style.border = "2px solid #D81E05";
+                        errorMessage2.innerHTML = "Onjuiste e-mail en/of wachtwoord!";
+                    }
+                });
+        }
+        function adminlogin() {
+            var input1 = $("#input1").val();
+            var input2 = $("#input2").val();
+            var errorMessage2 = document.getElementById("error-message2");
+
+            databaseManager
+                .query("SELECT GebruikerID, Email, Wachtwoord, Achternaam, Geslacht FROM gebruikers WHERE Email = ? AND Wachtwoord = ? AND Rechten = 'Admin'", [input1, input2])
+                .done(function (data) {
+                    if (data.length == 1){
+                        console.log("SUCCEEDED",data);
+                        window.location.href = "admin-home.html";
+                        sessionStorage.setItem("GebruikerID", data[0].GebruikerID);
+                        sessionStorage.setItem("Achternaam", data[0].Achternaam);
+                        sessionStorage.setItem("Geslacht", data[0].Geslacht);
+                    } else{
+                        console.log("FOUTE INLOG");
+                        $("#input1").val = "E-mail";
+                        $("#input2").val = "Wachtwoord";
+                        document.getElementById("input1").style.border = "2px solid #D81E05";
+                        document.getElementById("input2").style.border = "2px solid #D81E05";
+                        errorMessage2.innerHTML = "Onjuiste e-mail en/of wachtwoord!";
+                    }
+                });
+        }
+
+        function reset1() {
+            document.getElementById("input1").style.color = "black";
+            if(document.getElementById("input1").value === "E-mail" ){
+                document.getElementById("input1").value = "";
+            }
+            document.getElementById("input1").style.fontStyle = "normal";
+         }
+        function reset2() {
+            document.getElementById("input2").style.color = "black";
+            document.getElementById("input2").setAttribute("type","password");
+            if(document.getElementById("input2").value === "Wachtwoord" ){
+                document.getElementById("input2").value = "";
+            }            document.getElementById("error-message2").innerHTML = "";
+        }
+    </script>
+</head>
+<body>
+<div id="header"></div>
+<div class="background">
+<div id="content">
+    <!--User icon-->
+    <div class="user-logo">
+        <ul>
+            <!--Input fields-->
+            <div class="outer-box"><h3 class="inloggen">Inloggen</h3></div>
+            <div class="outer-box"><p class="login-zin"> Log in met uw Corendon account</p></div>
+            <div id="error-message2" class="outer-box"></div>
+            <li><input type="text" style="margin-bottom: 40px;" onfocus="reset1()"  onclick="reset1()" value="E-mail" id="input1"></li>
+            <div id="error-message" class="outer-box"></div>
+            <li><input type="text" style="margin-bottom: 40px" onfocus="reset2()" onclick="reset2()" value="Wachtwoord" id="input2"></li>
+            <li>
+                <a class="buttons" id="login"><button type="button" onclick="login()">Inloggen</button></a>
+            </li>
+            <li>
+                <a class="buttons" id="adminlogin"><button type="button" onclick="adminlogin()">Inloggen als admin</button></a>
+            </li>
+            <li><p><a href="forgot-password.html" class="links">Wachtwoord vergeten?</a><br>
+                Nog geen account? <a href="registreren.html" class="links">Klik hier!</a></p></li>
+        </ul>
+    </div>
+</div>
+</div>
+<div id="footer"></div>
+</body>
+</html>

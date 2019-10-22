@@ -1,0 +1,226 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>registreren</title>
+    <!-- .............................................dit kleine stukje moet iedereen in zijn eigen page zetten moet iedereen in zijn eigen page zetten ........................................ -->
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+    <script src="JS/utils/sessionManager.js"></script>
+    <script src="JS/utils/databaseManager.js"></script>
+    <script src="JS/database.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#header').load('header.html');
+        });
+        $(document).ready(function () {
+            $('#footer').load('footer.html');
+        });
+
+
+        function button() {
+            var inputs = document.getElementsByClassName("input");
+            var select = document.getElementsByClassName("select");
+            var date = document.getElementsByClassName("date");
+            var leeftijd;
+
+            var one_day = 1000 * 60 * 60 * 24;
+            leeftijd = Math.round((-1 * (date[0].valueAsDate - Date.now()) / one_day) / 365);
+            console.log(leeftijd);
+
+            var errorMessage = document.getElementsByClassName("error-message");
+            var errorMessageInputs = document.getElementsByClassName("error-message inputs");
+            console.log(errorMessage.length);
+
+
+            if ((inputs[0].value !== "" && isNaN(inputs[0].value)) &&
+                (inputs[1].value !== "" && isNaN(inputs[1].value)) &&
+                (inputs[2].value !== "" && (inputs[2].value.includes("@") && (inputs[2].value.includes(".nl") || inputs[2].value.includes(".com")))) &&
+                inputs[3].value !== "" &&
+                inputs[4].value === inputs[3].value && inputs[4].value !== "" &&
+                select[0].value !== "Aanhef" &&
+                leeftijd >= 18) {
+
+                var x = document.getElementById("content2");
+                var y = document.getElementById("finished");
+                x.style.display = "none";
+                y.style.display = "block";
+
+                var voornaam = document.getElementById("voornaam").value;
+                var achternaam = document.getElementById("achternaam").value;
+                var email = document.getElementById("email").value;
+                var wachtwoord = document.getElementById("wachtwoord").value;
+                var aanhef = document.getElementById("aanhef").value;
+
+
+                databaseManager
+                    .query("INSERT INTO gebruikers (Voornaam, Achternaam, Email, Wachtwoord, Geslacht, Rechten) VALUES (?, ?, ?, ?, ?, ?)",
+                        [voornaam, achternaam, email, wachtwoord, aanhef, "User"])
+                    .done(function (data) {
+                        console.log(data);
+                        console.log("Succes");
+                        databaseManager
+                            .query("INSERT INTO profielen (GebruikerID, Leeftijd) VALUES (?, ?) ", [data.insertId, leeftijd])
+                            .done(function (data) {
+                                console.log(data);
+                                console.log("Succes");
+                            })
+                            .fail(function (reason) {
+                                console.log(reason);
+                                console.log("Fail");
+                            });
+                    })
+                    .fail(function (reason) {
+                        console.log(reason);
+                        console.log("Fail");
+                    });
+            }
+            else{
+                errorMessage[0].innerHTML = "U bent wat vergeten!";
+
+                if (!isNaN(inputs[0].value) || inputs[0].value === "") {
+                    if (inputs[0].value === "") {
+                        errorMessageInputs[0].innerHTML = "U bent wat vergeten!";
+                        inputs[0].style.border = "2px solid #D81E05";
+                    } else if (!isNaN(inputs[0].value)) {
+                        errorMessageInputs[0].innerHTML = "Geef een geldige voornaam!!";
+                        inputs[0].style.border = "2px solid #D81E05";
+                    }
+                } else {
+                    errorMessageInputs[0].innerHTML = "";
+                    inputs[0].style.border = "2px solid lightgray";
+                }
+                if (!isNaN(inputs[1].value) || inputs[1].value === "") {
+                    if (inputs[1].value === "") {
+                        errorMessageInputs[1].innerHTML = "U bent wat vergeten!";
+                        inputs[1].style.border = "2px solid #D81E05";
+                    } else if (!isNaN(inputs[1].value)) {
+                        errorMessageInputs[1].innerHTML = "Geef een geldige voornaam!!";
+                        inputs[1].style.border = "2px solid #D81E05";
+                    }
+                } else {
+                    errorMessageInputs[1].innerHTML = "";
+                    inputs[1].style.border = "2px solid lightgray";
+                }
+
+
+                if (inputs[2].value === "") {
+                    errorMessageInputs[2].innerHTML = "U bent wat vergeten!";
+                    inputs[2].style.border = "2px solid #D81E05";
+                }
+                else {
+                    if (!(inputs[2].value.includes("@")) && (!(inputs[2].value.includes(".nl")) || !(inputs[2].value.includes(".com")))) {
+                        errorMessageInputs[2].innerHTML = "Geef een geldige e-mail!";
+                        inputs[2].style.border = "2px solid #D81E05";
+                    }
+                    else {
+                        databaseManager
+                            .query("SELECT Email FROM gebruikers WHERE Email = ?", inputs[2].value)
+                            .done(function (gegevens2) {
+                                if(gegevens2.length === 0){
+                                    errorMessageInputs[2].innerHTML = "";
+                                    inputs[2].style.border = "2px solid lightgray";
+                                }else{
+                                    errorMessageInputs[2].innerHTML = "Deze email is al in gebruik!";
+                                    inputs[2].style.border = "2px solid #D81E05";
+                                }
+                            });
+                    }
+                }
+                if (inputs[3].value !== inputs[4].value || (inputs[3].value === inputs[4].value && inputs[3].value === "")) {
+                    inputs[3].style.border = "2px solid #D81E05";
+                    inputs[4].style.border = "2px solid #D81E05";
+                    errorMessageInputs[3].innerHTML = "U bent wat vergeten!";
+                    errorMessageInputs[4].innerHTML = "U bent wat vergeten!";
+                    if (inputs[3].value !== inputs[4].value) {
+                        errorMessageInputs[4].innerHTML = "Wachtwoord komt niet overeen";
+                    }
+                } else {
+                    inputs[3].style.border = "2px solid lightgray";
+                    inputs[4].style.border = "2px solid lightgray";
+                    errorMessageInputs[3].innerHTML = "";
+                    errorMessageInputs[4].innerHTML = "";
+                }
+                if (select[0].value !== "Aanhef") {
+                    select[0].style.border = "2px solid lightgray";
+                    errorMessage[0].innerHTML = "";
+                } else {
+                    select[0].style.border = "2px solid #D81E05";
+                }
+
+
+                one_day = 1000 * 60 * 60 * 24;
+                leeftijd = Math.round((-1 * (date[0].valueAsDate - Date.now()) / one_day) / 365);
+
+                if (date[0].value !== "") {
+                    if (leeftijd <= 18) {
+                        date[0].style.border = "2px solid #D81E05";
+                        errorMessage[3].innerHTML = "Geef een geldige geboortedatum!";
+                    } else {
+                        date[0].style.border = "2px solid lightgray";
+                        errorMessage[3].innerHTML = "";
+                    }
+                } else {
+                    date[0].style.border = "2px solid #D81E05";
+                    errorMessage[3].innerHTML = "U bent wat vergeten!";
+                }
+
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="CSS/registreren.css">
+</head>
+<body>
+<div id="header"></div>
+<div class="background">
+    <div id="content">
+        <div class="outer-box">
+            <div id="finished">
+                <h3 class="titel">Registreren</h3>
+                <p class="sentence">Registratie voltooid!</p>
+                <p class="go-back"><a href="logIn.html">< Ga terug naar de login pagina</a></p>
+            </div>
+        </div>
+        <div id="content2">
+            <div class="outer-box">
+                <h3 class="titel">Registreren</h3>
+                <p class="kop">Aanhef</p>
+                <select class="select" id="aanhef">
+                    <option>Aanhef</option>
+                    <option>Man</option>
+                    <option>Vrouw</option>
+                </select>
+                <div class="error-message"></div>
+                <p class="kop">Voornaam</p>
+                <input type="text" class="input" id="voornaam">
+                <div class="error-message inputs"></div>
+                <p class="kop">Achternaam</p>
+                <input type="text" class="input" id="achternaam">
+                <div class="error-message inputs"></div>
+                <p class="kop">Geboortedatum</p>
+                <input type="date" class="date">
+                <div class="error-message"></div>
+                <p class="kop">E-mail</p>
+                <input type="text" class="input" id="email">
+                <div class="error-message inputs"></div>
+                <p class="kop">Wachtwoord</p>
+                <input type="text" class="input" id="wachtwoord">
+                <div class="error-message inputs"></div>
+                <p class="kop">Wachtwoord (herhalen)</p>
+                <input type="text" class="input">
+                <div class="error-message inputs"></div>
+                <p class="sentence" style="margin-top: 30px;">Door het aanmaken van uw account gaat u akkoord met onze
+                    Algemene Voorwaarden</p>
+            </div>
+            <button onclick="button()">Registreren</button>
+            <p class="go-back"><a href="logIn.html">< Ga terug naar de login pagina</a></p>
+        </div>
+    </div>
+
+
+</div>
+<div id="footer"></div>
+</body>
+</html>

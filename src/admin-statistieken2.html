@@ -1,0 +1,102 @@
+<html>
+<head>
+    <title>Home Admin</title>
+    <link rel="stylesheet" href="CSS/admin-statistieken.css">
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous">
+    </script>
+    <script type="text/javascript">
+        $(document).ready(function() { $('#header').load('admin-header.html'); });
+    </script>
+    <script src="JS/utils/sessionManager.js"></script>
+    <script src="JS/utils/databaseManager.js"></script>
+    <script src="JS/database.js"></script>
+    <script type="text/javascript">
+        var d = new Date();
+        var year = d.getFullYear();
+        var month = d.getMonth() + 1;
+        if (month < 10) {
+            month = '0' + month
+        }
+        var day = d.getDay();
+        if (day < 10) {
+            day = '0' + day
+        }
+        var today = year + "-" + month + "-" + day;
+        var thisMonth = year + "-" + (month - 1) + "-" + day;
+        var thisYear = (year - 1) + "-" + month + "-" + day;
+
+        var listDag = new Array();
+        databaseManager
+            .query("SELECT * FROM statistieken WHERE Soort = 'Land' AND Datum = ?", today)
+            .done(function(data) {
+                console.log("data today:", data);
+                listDag[0] = ['Land', 'Dag'];
+                for (var i = 0; i < data.length; i++){
+                    listDag[i + 1] = [data[i].Bestemming, data[i].Bekeken];
+                }
+            })
+            .fail(function(reason) {
+                console.log(reason);
+            });
+
+        var listMaand = new Array();
+        databaseManager
+            .query("SELECT * FROM statistieken WHERE Soort = 'Land' AND Datum >= ?", thisMonth)
+            .done(function(data) {
+                console.log("data this month:", data);
+                listMaand[0] = ['Land', 'Maand'];
+                for (var i = 0; i < data.length; i++){
+                    listMaand[i + 1] = [data[i].Bestemming, data[i].Bekeken];
+                }
+            })
+            .fail(function(reason) {
+                console.log(reason);
+            });
+
+        var listYear = new Array();
+        databaseManager
+            .query("SELECT * FROM statistieken WHERE Soort = 'Land' AND Datum >= ?", thisYear)
+            .done(function(data) {
+                console.log("data this year:", data);
+                listYear[0] = ['Land', 'Jaar'];
+                for (var i = 0; i < data.length; i++){
+                    listYear[i + 1] = [data[i].Bestemming, data[i].Bekeken];
+                }
+            })
+            .fail(function(reason) {
+                console.log(reason);
+            });
+
+
+        google.charts.load('current', {'packages':['corechart']});
+        google.charts.setOnLoadCallback(drawChart);
+
+        function drawChart() {
+            var data1 = google.visualization.arrayToDataTable(listDag);
+            var chart1 = new google.visualization.BarChart(document.getElementById('chart1'));
+            chart1.draw(data1);
+
+            var data2 = google.visualization.arrayToDataTable(listMaand);
+            var chart2 = new google.visualization.BarChart(document.getElementById('chart2'));
+            chart2.draw(data2);
+
+            var data3 = google.visualization.arrayToDataTable(listYear);
+            var chart3 = new google.visualization.BarChart(document.getElementById('chart3'));
+            chart3.draw(data3);
+        }
+    </script>
+</head>
+<body>
+<div id="header"></div>
+<div id="content">
+    <div id="onderwerp">Meest bezochte plaatsen</div>
+    <div id="chart1"></div>
+    <div id="chart2"></div>
+    <div id="chart3"></div>
+</div>
+</body>
+</html>

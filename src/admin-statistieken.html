@@ -1,0 +1,54 @@
+<html>
+<head>
+	<title>Home Admin</title>
+	<link rel="stylesheet" href="CSS/admin-statistieken.css">
+	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+	<script
+  		src="https://code.jquery.com/jquery-3.3.1.min.js"
+  		integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  		crossorigin="anonymous">
+  		</script>
+	<script src="JS/utils/sessionManager.js"></script>
+	<script src="JS/utils/databaseManager.js"></script>
+	<script src="JS/database.js"></script>
+  	<script type="text/javascript">
+  		$(document).ready(function() { $('#header').load('admin-header.html'); });
+  		</script>
+	<script type="text/javascript">
+        var list = new Array();
+        databaseManager
+            .query("SELECT Land, COUNT(*) as Amount FROM profielen GROUP BY Land")
+            .done(function(data) {
+                console.log("data:", data);
+                list[0] = ['Land', 'Aantal'];
+                for (var i = 0; i < data.length; i++){
+                    if (data[i].Land) {
+                        list[i + 1] = [data[i].Land, data[i].Amount];
+                    }else{
+                        list[i + 1] = ["Not specified", data[i].Amount];
+					}
+                }
+            })
+            .fail(function(reason) {
+                console.log(reason);
+            });
+
+
+        google.charts.load('current', {'packages':['corechart'], 'language': 'nl'});
+        google.charts.setOnLoadCallback(drawChart);
+
+        function drawChart() {
+            var data = google.visualization.arrayToDataTable(list);
+            var chart = new google.visualization.BarChart(document.getElementById('chart_div'));
+            chart.draw(data);
+        }
+	</script>
+</head>
+<body>
+	<div id="header"></div>
+	<div id="content">
+		<div id="onderwerp">Meest geregisteerde gebruikers</div>
+		<div id="chart_div"></div>
+	</div>
+</body>
+</html>

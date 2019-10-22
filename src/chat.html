@@ -1,0 +1,194 @@
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <title>chat</title>
+    <!-- footer en header code -->
+
+
+    <link rel="stylesheet" href="CSS/home.css">
+    <link rel="stylesheet" href="CSS/bestemmingen.css">
+
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+    <script src="JS/utils/sessionManager.js"></script>
+    <script src="JS/utils/databaseManager.js"></script>
+    <script src="JS/database.js"></script>
+    <script src="JS/global.js"></script>
+    <script type="text/javascript">
+
+        var gebruiker1ID;
+        var gebruiker2ID;
+        var chatberichtID;
+        var sessionID = sessionStorage.getItem("GebruikerID");
+        $(function () {
+            $('#header').load('header.html');
+            $('#footer').load('footer.html');
+
+            //loadChat();
+        });
+        /*
+        stap1- maak functie waarbij als je op een vriend klikt dat het dan gaat kijken naar een chatberichtenID.
+        stap2- als er chatberichten id niet bestaat , maak dan chatberichtenID aan en vervolgens laad chatberichtenid.
+        stap3- als chatberichtenID wel bestaat laad chatberichtenID.
+        */
+        //hier checkt hij wie jou vrienden zijn.
+        databaseManager
+            .query("select  g.Voornaam, v.VriendID from gebruikers AS g " +
+                "inner join vrienden as v on g.GebruikerID = v.VriendID " +
+                "where v.GebruikerID = ? ", sessionID)
+            .done(function (data) {
+                console.log(sessionID, data);
+                for (var i = 0; i < data.length; i++) {
+                    $(".vriendenlijst").append("<a onclick='checkChatBerichtenID(" + sessionID + "," + data[i].VriendID + ")'>" + data[i].Voornaam + "</a>")
+                }
+            })
+            .fail(function (redenen) {
+                console.log(redenen);
+            });
+
+        function checkChatBerichtenID(eigenID, VriendID) {
+            databaseManager
+                .query("SELECT ChatBerichtID FROM chat WHERE Gebruiker1ID = ? AND Gebruiker2ID = ?", [eigenID, VriendID])
+                .done(function (data) {
+                    console.log(data);
+                    if (data.length > 0) {
+                        chatberichtID = data[0].ChatBerichtID;
+                        gebruiker1ID = eigenID;
+                        gebruiker2ID = VriendID;
+                        loadChat(data[0].ChatBerichtID, eigenID, VriendID)
+                    } else {
+                        console.log("is no chatberichtid trigger")
+                        $(".chatlogs").empty();
+                        chatberichtID = 0;
+                        gebruiker1ID = eigenID;
+                        gebruiker2ID = VriendID;
+                    }
+                });
+
+        }
+
+        function loadChat(ChatBerichtID, eigenID, VriendID) {
+            $(".chatlogs").empty();
+            document.getElementById("input").value = "";
+            databaseManager
+                .query("SELECT * FROM chatberichten WHERE ChatBerichtenID = ?", ChatBerichtID)
+                .done(function (data) {
+                    console.log("chatberichtdata:", data);
+                    ////////////////////////////////////////////////////////////////////////
+
+                    setTimeout(function () {
+                        window.location(loadChat()).reload();
+                    }, 100000);
+
+
+                    for (var i = 0; i < data.length; i++) {
+                        if (data[i].GebruikerID === eigenID) {
+                            $(".chatlogs").append("<div class='chat jezelf'>\n" +
+                                "<div class='user-photo'><img src='https://articles-images.sftcdn.net/wp-content/uploads/sites/3/2016/01/wallpaper-for-facebook-profile-photo.jpg' alt='hier nog een foto plaatsen'></div>\n" +
+                                "<p class='chat-message'>" + data[i].Message + "</p>\n" +
+                                "</div>")
+                        }
+                        else if (data[i].GebruikerID === VriendID) {
+                            $(".chatlogs").append("<div class='chat vriend'>\n" +
+                                "<div class='user-photo'><img src='https://articles-images.sftcdn.net/wp-content/uploads/sites/3/2016/01/wallpaper-for-facebook-profile-photo.jpg' alt='hier nog een foto plaatsen'></div>\n" +
+                                "<p class='chat-message'>" + data[i].Message + "</p>\n" +
+                                "</div>")
+                        }
+
+
+                    }
+                    $(".chatlogs").scrollTop($(".chatlogs")[0].scrollHeight);
+                })
+        }
+
+
+        function verstuur() {
+            var input = $("#input").val();
+
+            if (input != "") {
+                console.log("chatberichtid=",chatberichtID)
+                if (chatberichtID > 0){
+                    databaseManager
+                        .query("INSERT INTO chatberichten(ChatBerichtenID,GebruikerID,Message,Tijd) VALUES(?,?,?,?)", [chatberichtID, gebruiker1ID, input, tijdVandaag()])
+                        .done(function (data) {
+                            console.log("Succes");
+                            $(".chat").remove();
+                            loadChat();
+                        });
+                } else{
+                    databaseManager
+                        .query("SELECT MAX(ChatBerichtenID) AS berichtID FROM chatberichten")
+                        .done(function (data) {
+                            var hoogsteID = data[0].berichtID + 1;
+                            databaseManager
+                                .query("INSERT INTO chatberichten(ChatBerichtenID,GebruikerID,Message,Tijd) VALUES (?,?,?,?)", [hoogsteID, gebruiker1ID, input, tijdVandaag()])
+                                .done(function () {
+                                    databaseManager
+                                        .query("INSERT INTO chat(Gebruiker1ID,Gebruiker2ID,ChatBerichtID) VALUES (?,?,?)", [gebruiker1ID, gebruiker2ID, hoogsteID])
+                                        .done(function () {
+                                            databaseManager
+                                                .query("INSERT INTO chat(Gebruiker1ID,Gebruiker2ID,ChatBerichtID) VALUES (?,?,?)", [gebruiker2ID, gebruiker1ID, hoogsteID])
+                                                .done(function () {
+                                                    chatberichtID = hoogsteID;
+                                                    loadChat();});
+                                        });
+
+
+                                });
+                        });
+                }
+            }
+        }
+
+        console.log(tijdVandaag());
+
+
+    </script>
+
+    <!--link verwijst naar de css code waar alle css dingen staan -->
+
+    <link rel="stylesheet" type="text/css" href="CSS/chat.css">
+</head>
+
+<!-- hier begint de opbouw van de website -->
+<body>
+<div id="header"></div>
+<!--de gehele chatbox zelf -->
+<div class="background">
+    <div id="content">
+        <div class="vriendenlijst">
+            <a class="vrienden">Potential friends</a>
+
+            <!--<a href="potential-partners.html"><strong><span title="voeg een potentiele partner">+</span></strong></a>-->
+        </div>
+
+
+        <div class="chatbox">
+
+            <!--bij chatlogs komen de gesprekwolkjes -->
+            <div class="chatlogs">
+
+
+            </div>
+            <!--chat form is waar je als gebruiker kan typen en waar je het kan verzenden -->
+
+
+            <div class="chat-form">
+                <!--textarea is waar de gebruiker kan gaan typen -->
+                <input id="input">
+                <!--button (Verstuur is waar de verstuur knop zit) -->
+                <button id="verstuur" onclick="verstuur()">Verstuur</button>
+
+            </div>
+        </div>
+
+
+    </div>
+</div>
+<!-- de footer van de website -->
+<div id="footer"></div>
+</body>

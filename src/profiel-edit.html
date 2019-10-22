@@ -1,0 +1,286 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css"
+          integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+    <script src="JS/utils/sessionManager.js"></script>
+    <script src="JS/utils/databaseManager.js"></script>
+    <script src="JS/database.js"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#header').load('header.html');
+        });
+        $(document).ready(function () {
+            $('#footer').load('footer.html');
+        });
+    </script>
+    <script>
+
+        var lijstHobbies;
+        var hobbiesChecked = [];
+
+
+
+        databaseManager
+            .query("SELECT GebruikerID, Hobby FROM hobbies WHERE GebruikerID = ?", sessionStorage.getItem("GebruikerID"))
+            .done(function (gevonden) {
+                for (var i = 0; i < gevonden.length; i++) {
+                    hobbiesChecked[i] = gevonden[i].Hobby;
+                    console.log(hobbiesChecked[i]);
+                }
+
+
+                databaseManager
+                    .query("SELECT hobbynaam FROM hobbylist")
+                    .done(function (hobbielijst) {
+                        lijstHobbies = hobbielijst;
+                        console.log(hobbielijst);
+                        console.log(hobbiesChecked);
+
+                        for (var i = 0; i < hobbielijst.length; i++) {
+                            $("#hobbylist").append("<input id='"+hobbielijst[i].hobbynaam+"' class='hobbieCheck' type='checkbox' value='" + hobbielijst[i].hobbynaam + "' >" + hobbielijst[i].hobbynaam + "");
+                            console.log(hobbiesChecked.length);
+                            for (var j = 0; j < hobbiesChecked.length; j++) {
+                                if (hobbiesChecked[j] === hobbielijst[i].hobbynaam) {
+                                    $("#"+hobbielijst[i].hobbynaam).prop("checked", true);
+                                }
+                            }
+                        }
+
+                    });
+            });
+        function verwijderReis(){
+                    document.getElementById("reis").innerHTML = "Verwijderd!";
+
+        }
+        databaseManager
+            .query("SELECT g.Voornaam, g.Achternaam, p.Leeftijd, g.Geslacht, p.Woonplaats, p.Bio ,p.Land , p.Privacy FROM profielen as p INNER JOIN gebruikers as g ON g.GebruikerID = ? AND p.GebruikerID = ?", [sessionStorage.getItem('GebruikerID'), sessionStorage.getItem('GebruikerID')])
+            .done(function (data) {
+                console.log(data);
+                var inputs = document.getElementsByClassName("inputs");
+                var bio = document.getElementsByClassName("bio");
+                var geslacht = document.getElementById("geslacht");
+                var privacy = document.getElementById("privacy");
+                databaseManager
+                    .query("SELECT Land, Plaats FROM reizen WHERE GebruikerID = ?", sessionStorage.getItem("GebruikerID"))
+                    .done(function (data2) {
+                        $("#bestemming").append(data2[0].Plaats, ", ", data2[0].Land);
+                        /*if(data2.length <= 0){
+                            document.getElementById("verwiiderKnop").style.display = "none";
+                            document.getElementById("bestemming").innerHTML = "U heeft nog geen reis toegevoegd";
+
+                        }*/
+                    })
+                    .fail(function (gefaald) {
+                       console.log(gefaald);
+                    });
+
+                console.log("data[0].privacy:", data[0].Privacy);
+                var nieuwPrivacy;
+                if(data[0].Privacy === null){
+                    nieuwPrivacy = "empty";
+                }else {
+                    nieuwPrivacy = data[0].Privacy;
+                }
+
+                console.log("privacy.value:", privacy.value);
+
+                inputs[0].value = data[0].Voornaam;
+                inputs[1].value = data[0].Achternaam;
+                //inputs[2].value = data[0].Leeftijd ;
+                inputs[2].value = data[0].Woonplaats;
+                inputs[3].value = data[0].Land;
+               // inputs[4].value = data[0].Telefoon;
+                geslacht.value = data[0].Geslacht;
+                bio[0].value = data[0].Bio;
+                privacy.value = nieuwPrivacy;
+                console.log(privacy.value);
+
+
+            })
+            .fail(function (reason) {
+                console.log(reason);
+            });
+
+
+
+        function update() {
+            databaseManager
+                .query("DELETE FROM hobbies WHERE GebruikerID = ?", sessionStorage.getItem("GebruikerID"))
+                .done(function () {
+                });
+            var geslacht = $("#geslacht option:selected").val();
+            var inputs = document.getElementsByClassName("inputs");
+            var bio = document.getElementsByClassName("bio");
+            var privacy = $("#privacy option:selected").val();
+
+
+            if (inputs[0].value === "" ||
+                inputs[1].value === "" ||
+                //inputs[2].value === "" ||
+                inputs[2].value === "" ||
+                inputs[3].value === "" ||
+                //inputs[4].value === "" ||
+                geslacht === "Geslacht" ||
+                bio[0].value === "" ||
+                privacy === "Kies hoe openbaar uw pagina mag zijn..."
+
+            ) {
+                document.getElementsByClassName("outer-box error")[0].innerHTML = "U bent wat vergeten! Check of alles is ingevuld en ook geldig is!";
+                for (var i = 0; i < inputs.length; i++) {
+                    inputs[i].style.border = "2px solid #D81E05";
+                    bio[0].style.border = "2px solid #D81E05";
+                    document.getElementById("privacy").style.border = "2px solid #D81E05";
+                    document.getElementById("geslacht").style.border = "2px solid #D81E05";
+
+                    if (inputs[i].value !== "") {
+                        inputs[i].style.border = "2px solid lightgray";
+                    }
+                }
+                if (bio[0].value !== "") {
+                    bio[0].style.border = "2px solid lightgray";
+                }
+                if (privacy !== "Kies hoe openbaar uw pagina mag zijn...") {
+                    document.getElementById("privacy").style.border = "2px solid lightgray";
+                }
+
+                if (geslacht !== "Geslacht") {
+                    document.getElementById("geslacht").style.border = "2px solid lightgray";
+                }
+
+            } else {
+                databaseManager
+                    .query("UPDATE profielen AS p, gebruikers AS g SET p.Woonplaats = ?, p.Bio = ?, g.Voornaam = ?,g.Achternaam = ?, g.Geslacht = ? ,p.Privacy = ?, p.Land = ? WHERE p.GebruikerID = ? AND g.GebruikerID = ?;"
+                        , [inputs[2].value, bio[0].value, inputs[0].value, inputs[1].value, geslacht, privacy, inputs[3].value, sessionStorage.getItem('GebruikerID'), sessionStorage.getItem('GebruikerID')])
+                    .done(function (data) {
+                        console.log(data);
+                        console.log("Succes");
+                        window.location.href = "profiel.html";
+                    })
+                    .fail(function (reason) {
+                        console.log(reason);
+                        console.log("Fail");
+                    });
+            }
+
+
+            for (var i = 0; i < lijstHobbies.length; i++) {
+                if (document.getElementsByClassName("hobbieCheck")[i].checked) {
+                    databaseManager
+                        .query("INSERT INTO hobbies (GebruikerID, Hobby) VALUES (?,?)", [sessionStorage.getItem("GebruikerID"), document.getElementsByClassName("hobbieCheck")[i].value])
+                        .done(function (data2) {
+                            //console.log(data2)
+                        });
+                } else {
+                    databaseManager
+                        .query("DELETE FROM hobbies WHERE Hobby = ? AND GebruikerID = ?", [document.getElementsByClassName("hobbieCheck")[i].value, sessionStorage.getItem("GebruikerID")])
+                        .done(function (data3) {
+                            //console.log(data3)
+                        });
+                }
+            }
+            if(document.getElementById("reis").innerHTML === "Verwijderd!") {
+                databaseManager
+                    .query("DELETE FROM reizen WHERE GebruikerID = ?", sessionStorage.getItem("GebruikerID"))
+                    .done(function () {
+                        console.log("verwijderd");
+                    });
+            }
+
+        }
+    </script>
+    <link rel="stylesheet" href="CSS/profiel-edit.css">
+</head>
+<body>
+<div id="header"></div>
+<div class="background">
+    <div id="content" style="display: table">
+        <div class="logo">
+            <i class="fas fa-user-edit fa-9x"></i>
+        </div>
+        <div class="outer-box error" style="margin-top: 25px">
+
+        </div>
+        <div class="outer-box error" style="margin-top: 25px">
+
+        </div>
+        <div class="outer-box">
+            <h3 style="margin-left: 10px">Algemeen</h3>
+            <div class="box">
+                Voornaam
+                <input type="text" class="inputs"><br>
+                Achternaam
+                <input type="text" class="inputs"><br>
+                <!--Leeftijd
+                <input type="text" class="inputs"><br>-->
+                Geslacht<br>
+                <select id="geslacht" style="margin: 5px">
+                    <option>Geslacht</option>
+                    <option class="keuze" value="Man">Man</option>
+                    <option class="keuze" value="Vrouw">Vrouw</option>
+                </select>
+            </div>
+            <div class="box">
+                Woonplaats
+                <input type="text" class="inputs"><br>
+                Land
+                <input type="text" class="inputs"><br>
+                <!--Telefoon
+                <input type="text" class="inputs"><br>-->
+            </div>
+            <div class="box">
+                <textarea class="bio" rows="11" cols="100%"></textarea>
+            </div>
+        </div>
+        <div class="outer-box">
+            <h3 style="margin-left: 10px; float: left; width: 100%;">Hobbies</h3>
+            <div class="box" id="hobbylist" style="height: 20%;">
+            </div>
+        </div>
+        <div class="outer-box">
+            <h3 style="margin-left: 10px; float: left; width: 100%;">Reis</h3>
+            <div id="reis" class="box">
+                <div id="bestemming"></div>
+                <button id="verwijderKnop" style="background-color: white; color: #B81A04; margin-top: 10px" onclick="verwijderReis()">Verwijder</button>
+            </div>
+        </div>
+
+        <div class="outer-box">
+            <h3 style="margin-left: 10px;  width: 25%;">Privacy</h3>
+            <select id="privacy">
+                <option value="empty">Kies hoe openbaar uw pagina mag zijn...</option>
+                <option class="keuze" value="low">Iedereen mag mijn pagina zien</option>
+                <option class="keuze" value="medium">Iedereen mag alleen mijn algemene informatie zien</option>
+                <option class="keuze" value="high">Ik laat mijn pagina alleen aan partners zien</option>
+            </select>
+        </div>
+
+        <div class="outer-box">
+            <a class="buttons" id="update">
+                <button type="button" onclick="update()" >Aanpassen</button>
+            </a>
+        </div>
+    </div>
+</div>
+<div id="footer"></div>
+</body>
+<script>
+    databaseManager
+        .query("SELECT * FROM reizen WHERE GebruikerID = ?", sessionStorage.getItem("GebruikerID"))
+        .done(function (gefixed) {
+        if(gefixed.length <= 0){
+            document.getElementById("verwijderKnop").style.display = "none";
+            document.getElementById("bestemming").innerHTML = "U heeft nog geen reis toegevoegd";
+        }
+    });
+
+
+</script>
+</html>

@@ -1,0 +1,216 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Contact</title>
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+    <script src="JS/utils/sessionManager.js"></script>
+    <script src="JS/utils/databaseManager.js"></script>
+    <script src="JS/database.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#header').load('header.html');
+        });
+        $(document).ready(function () {
+            $('#footer').load('footer.html');
+        });
+
+    </script>
+    <link rel="stylesheet" href="CSS/contact.css">
+    <script>
+        var inputs = document.getElementsByClassName("input");
+        var dropdown = document.getElementsByClassName("dropdown");
+        var textarea = document.getElementsByTagName("textarea");
+        var welIngelod = sessionStorage.length > 0;
+
+            function verstuur() {
+                console.log(inputs[0].value);
+                console.log(!(isNaN(inputs[0].value)));
+                if(welIngelod){
+                    for(var k = 0; k < inputs.length ; k++){
+                        inputs[k].value = "noNeed";
+                    }
+                }
+
+                if (inputs[0].value !== "" &&
+                    inputs[1].value !== "" &&
+                    inputs[2].value !== "" &&
+                    dropdown[0].value !== "niks"&&
+                    textarea[0].value !== "") {
+                    document.getElementById("finished").style.display = "block";
+                    document.getElementById("content2").style.display = "none";
+                    console.log("Succes");
+
+                    if (welIngelod) {
+
+                        databaseManager
+                            .query("SELECT Voornaam, Achternaam, Email FROM gebruikers WHERE GebruikerID = ?",
+                                sessionStorage.getItem("GebruikerID"))
+                            .done(function (gegevens) {
+                                console.log("Succes");
+                                databaseManager
+                                    .query("INSERT INTO contact (Voornaam, Achternaam, Email, Onderwerp, Bericht) VALUES(?,?,?,?,?)",
+                                        [gegevens[0].Voornaam, gegevens[0].Achternaam, gegevens[0].Email, dropdown[0].value, textarea[0].value])
+                                    .done(function (data) {
+                                        console.log(data);
+                                        console.log("Succes");
+                                   })
+                                    .fail(function (reason) {
+                                        console.log(reason);
+                                        console.log("FOUT");
+                                    })
+                            })
+                            .fail(function (reason) {
+                                console.log(reason);
+                                console.log("FOUT");
+                            })
+                    }
+                    else {
+
+                        databaseManager
+                            .query("INSERT INTO contact (Voornaam, Achternaam, Email, Onderwerp, Bericht) VALUES(?,?,?,?,?)",
+                                [inputs[0].value, inputs[1].value, inputs[2].value, dropdown[0].value, textarea[0].value])
+                            .done(function (data) {
+                                console.log(data);
+                                console.log("Succes");
+                            })
+                            .fail(function (reason) {
+                                console.log(reason);
+                                console.log("FOUT");
+
+                            })
+                    }
+
+                }
+         else
+                {
+                    console.log("FOUT");
+                    for (var i = 0; i < inputs.length ; i++) {
+
+                        if (inputs[i].value === "") {
+
+                        inputs[i].style.border = "2px solid #D81E05";
+                        document.getElementsByTagName("textarea")[0].style.border = "2px solid #D81E05";
+                        document.getElementsByClassName("error")[i].innerHTML = "U bent wat vergeten!";
+                        }
+                    }
+                    if(inputs[0].value !== "") {
+                        if (isNaN(inputs[0].value)) {
+                            inputs[0].style.border = "2px solid lightgray";
+                            document.getElementsByClassName("error")[0].innerHTML = "";
+                        } else {
+                            inputs[0].style.border = "2px solid #D81E05";
+                            document.getElementsByClassName("error")[0].innerHTML = "Geef een geldige naam!";
+                        }
+                    }
+
+                if(inputs[1].value !== "") {
+                    if (isNaN(inputs[1].value)) {
+                        inputs[1].style.border = "2px solid lightgray";
+                        document.getElementsByClassName("error")[1].innerHTML = "";
+                    } else {
+                        inputs[1].style.border = "2px solid #D81E05";
+                        document.getElementsByClassName("error")[1].innerHTML = "Geef een geldige naam!";
+                    }
+                }
+                if(inputs[2].value !== "") {
+                    if (inputs[2].value.includes("@") && (inputs[2].value.includes(".nl") || inputs[2].value.includes(".com"))) {
+                        inputs[2].style.border = "2px solid lightgray";
+                        document.getElementsByClassName("error")[2].innerHTML = "";
+                    } else {
+                        inputs[2].style.border = "2px solid #D81E05";
+                        document.getElementsByClassName("error")[2].innerHTML = "Geef een geldige e-mail!";
+                    }
+                }
+                    if (document.getElementsByTagName("textarea")[0].value !== "") {
+                        document.getElementsByTagName("textarea")[0].style.border = "2px solid lightgray";
+                        document.getElementsByClassName("error")[4].innerHTML = "";
+
+                    }else{
+                        document.getElementsByTagName("textarea")[0].style.border = "2px solid #D81E05";
+                        document.getElementsByClassName("error")[4].innerHTML = "U bent wat vergeten!";
+                    }
+                    if($(".dropdown")[0].value === "niks"){
+                        document.getElementsByClassName("error")[3].innerHTML = "U bent wat vergeten!";
+                        document.getElementsByClassName("dropdown")[0].style.border = "2px solid #D81E05";
+                    }else{
+                        document.getElementsByClassName("error")[3].innerHTML = "";
+                        document.getElementsByClassName("dropdown")[0].style.border = "2px solid lightgray";
+                    }
+
+                }
+            }
+    </script>
+</head>
+<body>
+<!--Header-->
+<div id="header"></div>
+<div id="content">
+    <div class="outer-box">
+        <div id="finished">
+            <h1 class="header3 outer-box">Contact</h1>
+            <p class="outer-box">Verstuurd!</p>
+            <p class="go-back"><a href="index.html">< Ga terug naar de home pagina</a></p>
+        </div>
+    </div>
+
+    <div id="content2">
+
+        <h1 class="header3 outer-box">Contact</h1>
+
+        <p class="outer-box" style="margin-top: 30px; margin-bottom: 25px">
+            Hier kunt u een klacht indienen als u tegen een probleem zit of iets dergelijks<br>
+            Wilt u direct contact opnemen met het bedrijf? <a class="link" href="https://www.corendon.nl/contact" target="_blank">Hier</a> kunt u contact opnemen.
+        </p>
+
+
+        <div class="outer-box" style="margin: 0 auto">
+            <div class="invoer">
+            <p class="kop">Voornaam</p>
+            <input type="text" name="firstname" value="" class="input">
+            <div class="error"></div>
+
+            <p class="kop">Achternaam</p>
+            <input type="text" name="lastname" value="" class="input">
+            <div class="error"></div>
+
+            <p class="kop">E-mail</p>
+            <input type="text" name="mail" value="" class="input">
+            <div class="error"></div>
+            </div>
+
+            <p class="kop">Soort probleem</p>
+            <select class="dropdown" name="problem">
+                <option value="niks">Kies een categorie</option>
+                <option value="web">Website</option>
+                <option value="chat">Chat</option>
+                <option value="booking">Boeken</option>
+                <option value="partner">Partner</option>
+                <option value="account">Account</option>
+                <option value="other">Anders</option>
+            </select>
+            <div class="error"></div>
+
+            <br>
+            <p class="kop">Beschrijving</p>
+            <textarea name="problem-desc" rows="10" cols="100%"></textarea>
+            <div class="error"></div>
+
+            <br>
+            <br><br>
+            <button onclick="verstuur()">Verstuur</button>
+        </div>
+        <!--Google maps-->
+        <!--<div class="mapouter outer-box" style="float: right"><div class="gmap_canvas"><iframe width="800" height="100%" id="gmap_canvas" src="https://maps.google.com/maps?q=wbh&t=&z=15&ie=UTF8&iwloc=&output=embed" frameborder="0" scrolling="no" marginheight="0" marginwidth="0"></iframe><a href="https://www.pureblack.de/google-maps/">pureblack.de</a></div><style>.mapouter{text-align:right;height:500px;width:1000px;}.gmap_canvas {overflow:hidden;background:none!important;height:500px;width:1000px;}</style></div>-->
+    </div>
+    <script>
+        if(welIngelod) {
+            document.getElementsByClassName("invoer")[0].style.display = "none";
+        }
+    </script>
+</div>
+<div id="footer"></div>
+</body>
+</html>
